@@ -1,0 +1,6 @@
+new_user_credentials.csv
+join-command
+backup-node.yaml
+node-playbook.yaml
+.vagrant
+vagrant-aws.pem

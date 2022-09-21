@@ -1,0 +1,165 @@
+---
+- hosts: all
+  become: yes
+  become_method: sudo
+  become_user: root
+  vars:
+    - kubeconfig: /home/ubuntu/.kube/config
+    - nodeip: 172.31.16.166
+    - nodecidr: 172.31.0.0/16
+  tasks:
+    - name: Set hostname of k8s master
+      hostname:
+        name: k8s-master
+        use: systemd
+    - name: Update hosts file with k8s-master
+      lineinfile:
+        path: /etc/hosts
+        line: k8s-master "{{ nodeip }}"
+    - name: Install packages that allow apt to be used over https
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg-agent
+          - software-properties-common
+          - unzip
+    - name: get containerd binary
+      get_url: 
+        url: "{{ item }}"
+        dest: /home/ubuntu
+      with_items:
+        - https://github.com/containerd/containerd/releases/download/v1.6.8/containerd-1.6.8-linux-amd64.tar.gz
+        - https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+        - https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64
+        - https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz
+    - name: unarchive the containerd binary
+      unarchive:
+        src: /home/ubuntu/containerd-1.6.8-linux-amd64.tar.gz
+        dest: /usr/local
+        remote_src: yes
+    - name: copy containerd system file to systemd
+      copy:
+        src: /home/ubuntu/containerd.service
+        dest: /etc/systemd/system/containerd.service
+        remote_src: yes
+    - name: reloading systemd
+      systemd:
+        daemon-reload: yes
+        enabled: yes
+        name: containerd
+        state: restarted
+      ignore_errors: yes
+    - name: install runc release
+      command: install -m 755 runc.amd64 /usr/local/sbin/runc 
+    - name: Create cni directory
+      file:
+        path: /opt/cni/bin
+        state: directory
+    - name: install cni plugins
+      unarchive:
+        src: /home/ubuntu/cni-plugins-linux-amd64-v1.1.1.tgz
+        dest: /opt/cni/bin
+        remote_src: yes
+    - name: Remove swapfile
+      mount:
+        name: "{{ item }}"
+        fstype: swap
+        state: absent
+      with_items:
+        - swap
+    - name: Disable Swap
+      command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+    - name: Remove swap from fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: 'swap'
+        state: absent
+    - name: Add an apt signing key for Kubernetes
+      apt_key:
+        url : https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+    - name: Adding apt repository for Kubernetes
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+        filename: kubernetes.list
+    - name: Install kubernetes binaries
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+          - kubelet
+          - kubeadm
+          - kubectl
+    - name: When the "bridge" CNI-plugin is used the sysctl must be set
+      command: modprobe br-netfilter
+    - name: configure node ip
+      lineinfile: path={{ item.path }} line={{ item.line }} create=yes
+      with_items:
+         - { path: '/etc/default/kubelet', line: "KUBELET_EXTRA_ARGS=--node-ip={{ nodeip }}" }
+         - { path: '/etc/sysctl.conf', line: "net.bridge.bridge-nf-call-iptables = 1" }
+         - { path: '/etc/sysctl.conf', line: "net.ipv4.ip_forward = 1" }
+         - { path: '/etc/modules-load.d/modules.conf', line: "br-netfilter" }
+    - name: reload sysctl.conf
+      command: sysctl -p
+      ignore_errors: yes
+    - name: Restart kubelet
+      service:
+        name: kubelet
+        daemon_reload: yes
+        state: restarted
+        enabled: yes
+    - name: Restart containerd service
+      service:
+        name: "{{ item }}"
+        state: restarted
+        enabled: yes
+      with_items:
+        - containerd
+    - name: Initialize the Kubernetes cluster using kubeadm
+      command: kubeadm init --apiserver-advertise-address="{{ nodeip }}" --apiserver-cert-extra-sans="{{ nodeip }}"  --node-name k8s-master --pod-network-cidr="{{ nodecidr }}"
+    - name: Create .kube folder
+      file:
+        path: /home/ubuntu/.kube
+        state: directory
+    - name: Copy kubernetes conf file to .kube
+      copy:
+        dest: "{{ kubeconfig }}"
+        src: /etc/kubernetes/admin.conf
+        owner: ubuntu
+        group: ubuntu
+        remote_src: yes
+    - name: Copy calico files
+      copy: src={{ item.src }} dest={{ item.dest }}
+      with_items:
+         - { src: 'custom-resources.yaml', dest: '/home/ubuntu/' }
+         - { src: 'tigera-operator.yaml', dest: '/home/ubuntu/' }
+      tags:
+         - calicofiles
+    - name: Install calico pod network
+      become: false
+      command: kubectl --kubeconfig="{{ kubeconfig }}" create -f /home/ubuntu/tigera-operator.yaml
+    - name: Install custom resource for calico
+      become: false
+      command: kubectl create --kubeconfig="{{ kubeconfig }}" -f /home/ubuntu/custom-resources.yaml 
+ 
+    - name: Generate join command
+      command: kubeadm token create --print-join-command
+      register: join_command
+ 
+    - name: Copy join command to a  file
+      copy: content="{{ join_command.stdout_lines[0] }}" dest="/home/ubuntu/join-command"
+    - name: Copy join-command file to local machine
+      fetch:
+        src: /home/ubuntu/join-command
+        dest: ./
+        flat: yes
