@@ -5,22 +5,28 @@
   become_user: root
   vars:
     - kubeconfig: /home/ubuntu/.kube/config
-    - nodeip: 172.31.16.166
     - nodecidr: 172.31.0.0/16
   tasks:
     - name: Set hostname of k8s master
       hostname:
-        name: k8s-master
+        name: "{{ hostname }}"
         use: systemd
-    - name: Update hosts file with k8s-master
+    - name: Update hosts file with "{{ hostname }}"
       lineinfile:
         path: /etc/hosts
-        line: k8s-master "{{ nodeip }}"
+        line: "{{ hostname }} {{ nodeip }}"
+    - name: Run update in separate step. Sometimes update_cache with packages doesn't work
+      become: yes
+      apt:
+        update_cache: yes
+        lock_timeout: 900
+        update_cache_retries: 5
+      ignore_errors: yes
     - name: Install packages that allow apt to be used over https
       apt:
         name: "{{ packages }}"
         state: present
-        update_cache: yes
+        lock_timeout: 900
       vars:
         packages:
           - apt-transport-https
@@ -28,7 +34,6 @@
           - curl
           - gnupg-agent
           - software-properties-common
-          - unzip
     - name: get containerd binary
       get_url: 
         url: "{{ item }}"
@@ -95,6 +100,7 @@
         name: "{{ packages }}"
         state: present
         update_cache: yes
+        lock_timeout: 900
       vars:
         packages:
           - kubelet
@@ -126,11 +132,17 @@
       with_items:
         - containerd
     - name: Initialize the Kubernetes cluster using kubeadm
-      command: kubeadm init --apiserver-advertise-address="{{ nodeip }}" --apiserver-cert-extra-sans="{{ nodeip }}"  --node-name k8s-master --pod-network-cidr="{{ nodecidr }}"
+      command: kubeadm init --apiserver-advertise-address="{{ nodeip }}" --apiserver-cert-extra-sans="{{ nodepubip }}"  --node-name="{{ hostname }}" --pod-network-cidr="{{ nodecidr }}"
+      tags:
+        - master
+
     - name: Create .kube folder
       file:
         path: /home/ubuntu/.kube
         state: directory
+      tags:
+        - master
+
     - name: Copy kubernetes conf file to .kube
       copy:
         dest: "{{ kubeconfig }}"
@@ -138,28 +150,62 @@
         owner: ubuntu
         group: ubuntu
         remote_src: yes
+      tags:
+        - master
+
     - name: Copy calico files
       copy: src={{ item.src }} dest={{ item.dest }}
       with_items:
          - { src: 'custom-resources.yaml', dest: '/home/ubuntu/' }
          - { src: 'tigera-operator.yaml', dest: '/home/ubuntu/' }
       tags:
-         - calicofiles
+        - master
+
     - name: Install calico pod network
       become: false
       command: kubectl --kubeconfig="{{ kubeconfig }}" create -f /home/ubuntu/tigera-operator.yaml
+      tags:
+        - master
+
     - name: Install custom resource for calico
       become: false
       command: kubectl create --kubeconfig="{{ kubeconfig }}" -f /home/ubuntu/custom-resources.yaml 
+      tags:
+        - master
  
     - name: Generate join command
       command: kubeadm token create --print-join-command
       register: join_command
+      tags:
+        - master
  
     - name: Copy join command to a  file
       copy: content="{{ join_command.stdout_lines[0] }}" dest="/home/ubuntu/join-command"
+      tags:
+        - master
+
     - name: Copy join-command file to local machine
       fetch:
         src: /home/ubuntu/join-command
         dest: ./
         flat: yes
+      tags:
+        - master
+
+    - name: Copy the join command to server location
+      copy: src=join-command dest=/tmp/join-command.sh mode=0777
+      tags:
+        - worker
+
+    - name: Join the node to cluster
+      command: sh /tmp/join-command.sh
+      tags:
+        - worker
+
+    - name: Copy kubeconfig to local machine
+      fetch: 
+         src: "{{ kubeconfig }}"
+         dest: ./ 
+         flat: yes
+      tags: 
+        - master

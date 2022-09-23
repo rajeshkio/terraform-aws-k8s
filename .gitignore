@@ -4,3 +4,5 @@ backup-node.yaml
 node-playbook.yaml
 .vagrant
 vagrant-aws.pem
+.terraform*
+terraform*
