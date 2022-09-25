@@ -6,3 +6,4 @@ node-playbook.yaml
 vagrant-aws.pem
 .terraform*
 terraform*
+config
