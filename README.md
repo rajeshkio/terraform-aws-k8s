@@ -17,8 +17,10 @@ Step:
    5 - terraform apply
 
 ## Manage EC2 instances:
+
+   You can modify the script as you need.
  
-   List all instances created using the key-pair of terraform. You can modify the script as you need
+   List all instances created using the key-pair of terraform:
 
    - ./aws-cli-scripts.sh list
 
