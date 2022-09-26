@@ -37,13 +37,10 @@ EOF
 list_instance () {
    echo " "
    for i in ${instances[@]}; do
-      echo "$i $($awsi.State[].Name --instance-ids $i $ot) $($awsi.Placement.AvailabilityZone --instance-ids $i $ot) $($awsi.PublicIpAddress --instance-ids $i $ot)" 
+     echo "$i $($awsi.State[].Name --instance-ids $i $ot) $($awsi.Placement.AvailabilityZone --instance-ids $i $ot) $($awsi.PublicIpAddress --instance-ids $i $ot) $($awsi.Tags[].Value --instance-ids $i $ot)"   
    done
    echo " "
 }
-
-
-
 
 stop_instance() {
 
