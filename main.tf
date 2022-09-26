@@ -24,7 +24,7 @@ resource "aws_instance" "master" {
   }
 
   provisioner "local-exec" {
-    command = "/bin/bash ansible-provision.sh ${self.public_ip} ${self.private_ip} worker ${aws_eip.master-eip.public_ip}" 
+    command = "/bin/bash ansible-provision.sh ${self.public_ip} ${self.private_ip} worker ${self.id} ${aws_eip.master-eip.public_ip}" 
   }
 }
 
@@ -42,7 +42,7 @@ resource "aws_instance" "worker" {
   }
 
   provisioner "local-exec" {
-    command = "/bin/bash ansible-provision.sh ${self.public_ip} ${self.private_ip} master" 
+    command = "/bin/bash ansible-provision.sh ${self.public_ip} ${self.private_ip} master ${self.id}" 
   }
 }
 

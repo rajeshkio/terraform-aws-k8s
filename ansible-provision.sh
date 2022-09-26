@@ -16,7 +16,7 @@ else
    done
 
    echo "Executing ansible script with values  -i $1 nodeip=$2 --skip-tags $3 nodepubip=$1"
-   ansible-playbook -u ubuntu --private-key vagrant-aws.pem -i $1, master-playbook.yaml  --extra-vars "nodeip=$2" --extra-vars "hostname=node-$(openssl rand -hex 3)" --skip-tags "$3" --extra-vars "nodepubip=$4"
+   ansible-playbook -u ubuntu --private-key vagrant-aws.pem -i $1, master-playbook.yaml  --extra-vars "nodeip=$2" --extra-vars "hostname=$4" --skip-tags "$3" --extra-vars "nodepubip=$5"
 fi
 
 
