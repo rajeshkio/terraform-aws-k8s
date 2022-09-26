@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ "$1" == "banner" ]]; then
-   alias ak='kubectl --kubeconfig=config'
+   alias ak="kubectl --kubeconfig=$PWD/config"
    sed -i "/:6443/s/https:.*/https:\/\/$2:6443/g" config
    echo '#######################################################################'
    echo -e '\033[5m Congratualations your cluster is ready. \n You can now use ak command as kubectl. \n For example: ak get nodes\033[0m'

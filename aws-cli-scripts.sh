@@ -1,9 +1,38 @@
 #!/bin/bash
 
-
 export awsi="aws ec2 describe-instances --query Reservations[].Instances[]"
 export ot="--output text"
 instances=($(aws ec2 describe-instances --filters "Name=key-name, Values=vagrant-aws" --query "Reservations[].Instances[].InstanceId"  --output text))
+
+print_help() {
+	cat  <<EOF
+
+USAGE: $0 [Options]
+Use the following options:
+      
+      list) 
+        lists all instances created using the .pem file from terraform script.
+
+      start)
+        Starts the EC2 instances listed above.
+
+      stop)
+        Stops the EC2 instances listed above.
+
+Examples:
+      $0 list
+            lists instances
+
+      $0 start
+            starts instances
+
+      $0 stop
+            stops instances
+
+
+EOF
+	exit 0
+}
 
 list_instance () {
    echo " "
@@ -12,6 +41,9 @@ list_instance () {
    done
    echo " "
 }
+
+
+
 
 stop_instance() {
 
@@ -47,6 +79,9 @@ case $1 in
       ;;
    stop)
       stop_instance
+      ;;
+    *)
+      print_help
       ;;
 
    esac
