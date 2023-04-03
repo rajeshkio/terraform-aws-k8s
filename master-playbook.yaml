@@ -5,7 +5,7 @@
   become_user: root
   vars:
     - kubeconfig: /home/ubuntu/.kube/config
-    - nodecidr: 172.31.0.0/16
+    - nodecidr: 10.244.0.0/16
   tasks:
     - name: Set hostname of k8s master
       hostname:
@@ -19,14 +19,12 @@
       become: yes
       apt:
         update_cache: yes
-        lock_timeout: 900
         update_cache_retries: 5
       ignore_errors: yes
     - name: Install packages that allow apt to be used over https
       apt:
         name: "{{ packages }}"
         state: present
-        lock_timeout: 900
       vars:
         packages:
           - apt-transport-https
@@ -39,13 +37,13 @@
         url: "{{ item }}"
         dest: /home/ubuntu
       with_items:
-        - https://github.com/containerd/containerd/releases/download/v1.6.8/containerd-1.6.8-linux-amd64.tar.gz
+        - https://github.com/containerd/containerd/releases/download/v1.7.0/containerd-1.7.0-linux-amd64.tar.gz
         - https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
         - https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64
-        - https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz
+        - https://github.com/containernetworking/plugins/releases/download/v1.2.0/cni-plugins-linux-amd64-v1.2.0.tgz
     - name: unarchive the containerd binary
       unarchive:
-        src: /home/ubuntu/containerd-1.6.8-linux-amd64.tar.gz
+        src: /home/ubuntu/containerd-1.7.0-linux-amd64.tar.gz
         dest: /usr/local
         remote_src: yes
     - name: copy containerd system file to systemd
@@ -68,7 +66,7 @@
         state: directory
     - name: install cni plugins
       unarchive:
-        src: /home/ubuntu/cni-plugins-linux-amd64-v1.1.1.tgz
+        src: /home/ubuntu/cni-plugins-linux-amd64-v1.2.0.tgz
         dest: /opt/cni/bin
         remote_src: yes
     - name: Remove swapfile
@@ -100,7 +98,6 @@
         name: "{{ packages }}"
         state: present
         update_cache: yes
-        lock_timeout: 900
       vars:
         packages:
           - kubelet
@@ -153,32 +150,12 @@
       tags:
         - master
 
-    - name: Copy calico files
-      copy: src={{ item.src }} dest={{ item.dest }}
-      with_items:
-         - { src: 'custom-resources.yaml', dest: '/home/ubuntu/' }
-         - { src: 'tigera-operator.yaml', dest: '/home/ubuntu/' }
-      tags:
-        - master
-
-    - name: Install calico pod network
-      become: false
-      command: kubectl --kubeconfig="{{ kubeconfig }}" create -f /home/ubuntu/tigera-operator.yaml
-      tags:
-        - master
-
-    - name: Install custom resource for calico
-      become: false
-      command: kubectl create --kubeconfig="{{ kubeconfig }}" -f /home/ubuntu/custom-resources.yaml 
-      tags:
-        - master
- 
     - name: Generate join command
       command: kubeadm token create --print-join-command
       register: join_command
       tags:
         - master
- 
+
     - name: Copy join command to a  file
       copy: content="{{ join_command.stdout_lines[0] }}" dest="/home/ubuntu/join-command"
       tags:

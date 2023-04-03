@@ -7,3 +7,4 @@ vagrant-aws.pem
 .terraform*
 terraform*
 config
+kubernetes-terraform.pem
