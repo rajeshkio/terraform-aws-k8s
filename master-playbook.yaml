@@ -7,7 +7,7 @@
     - kubeconfig: /home/ubuntu/.kube/config
     - nodecidr: 10.244.0.0/16
   tasks:
-    - name: Set hostname of k8s master
+    - name: Set hostname
       hostname:
         name: "{{ hostname }}"
         use: systemd
