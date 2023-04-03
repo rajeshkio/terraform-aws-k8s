@@ -9,7 +9,7 @@ variable "profile" {
   type = string
 }
 variable "master-count" {
-  default = 2
+  default = 1
   description = "How many k8s masters to create" 
   type = string
 }
@@ -19,7 +19,7 @@ variable "master-ami" {
   type = string
 }
 variable "master-size" {
-  default = "t3.small"
+  default = "t3.medium"
   description = "Size of master VM"
   type = string
 }
@@ -55,7 +55,7 @@ variable "node-ami" {
   type = string
 }
 variable "node-size" {
-  default = "t3.small"
+  default = "t3.medium"
   description = "Size of node VM"
   type = string
 }
@@ -132,6 +132,13 @@ variable "sg_master_ingress_rules" {
           cidr_block  = "0.0.0.0/0"
           description = "kube-controller-manager"
         },
+	{
+          from_port   = 8472
+          to_port     = 8472
+          protocol    = "udp"
+          cidr_block  = "0.0.0.0/0"
+          description = "flannel-vxlan"
+        },
     ]
 }
 variable "sg_node_ingress_rules" {
@@ -163,6 +170,13 @@ variable "sg_node_ingress_rules" {
           protocol    = "tcp"
           cidr_block  = "0.0.0.0/0"
           description = "NodePort Services"
+        },
+	{
+          from_port   = 8472
+          to_port     = 8472
+          protocol    = "udp"
+          cidr_block  = "0.0.0.0/0"
+          description = "flannel-vxlan"
         },
     ]
 }

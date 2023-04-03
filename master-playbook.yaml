@@ -51,6 +51,12 @@
         src: /home/ubuntu/containerd.service
         dest: /etc/systemd/system/containerd.service
         remote_src: yes
+    - name: configure containerd to use systemd
+      shell: |
+        mkdir /etc/containerd
+        containerd config default | tee /etc/containerd/config.toml >/dev/null 2>&1
+        sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+        systemctl restart containerd
     - name: reloading systemd
       systemd:
         daemon-reload: yes
