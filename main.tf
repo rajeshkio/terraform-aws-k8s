@@ -131,7 +131,7 @@ resource "aws_instance" "master" {
   key_name = var.master-key-pair
   vpc_security_group_ids = [ aws_security_group.allow_master.id ]
   tags = {
-    Name = "Master-k8s"
+    Name = "master-k8s"
   }
 
   provisioner "local-exec" {
@@ -150,7 +150,7 @@ resource "aws_instance" "worker" {
   key_name = var.node-key-pair
   vpc_security_group_ids = [ aws_security_group.allow_node.id ]
   tags = {
-    Name = "Worker-k8s-${count.index}"
+    Name = "worker-k8s-${count.index}"
   }
 
   provisioner "local-exec" {
@@ -158,7 +158,7 @@ resource "aws_instance" "worker" {
   }
 }
 
-resource "null_resource" "exporting-alias" {
+resource "null_resource" "running-provisioner" {
   depends_on = [ aws_instance.master, aws_instance.worker ]
   triggers = {
     cluster_instance_ids = join(",", aws_instance.master.*.id)
@@ -167,6 +167,7 @@ resource "null_resource" "exporting-alias" {
     command = "/bin/bash ansible-provision.sh banner ${aws_eip_association.eip_assoc.public_ip}" 
   }
 }
+
 
 output "publicIpk8sMaster" {
   value = aws_eip_association.eip_assoc.public_ip 

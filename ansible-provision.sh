@@ -1,11 +1,10 @@
 #!/bin/bash
-shopt -s expand_aliases
+#shopt -s expand_aliases
 
 if [[ "$1" == "banner" ]]; then
-   alias ak="kubectl --kubeconfig=$PWD/config"
    sed -i "/:6443/s/https:.*/https:\/\/$2:6443/g" config
    echo '#######################################################################'
-   echo -e '\033[5m Congratualations your cluster is ready. \n You can now use ak command as kubectl. \n For example: ak get nodes\033[0m'
+   echo -e '\033[5m Congratualations your cluster is ready. You can set an alias using k="kubectl --kubeconfig=config" in the same directory'
    echo '#######################################################################'
    helm install --kubeconfig=config flannel https://github.com/flannel-io/flannel/releases/latest/download/flannel.tgz -n kube-system
 else
