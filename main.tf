@@ -131,7 +131,7 @@ resource "aws_instance" "master" {
   key_name = var.master-key-pair
   vpc_security_group_ids = [ aws_security_group.allow_master.id ]
   tags = {
-    Name = "master-k8s"
+    Name = "master-k8s-0"
   }
 
   provisioner "local-exec" {
