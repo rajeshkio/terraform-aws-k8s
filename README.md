@@ -4,7 +4,7 @@ Script has been written for 1 master and multi worker setup. Adding multiple mas
 
 Step:
    
-   1 - Install terraform and Export your AWS_ACCESS_KEY_ID=, AWS_SECRET_ACCESS_KEY=
+   1 - Install terraform and configure aws credentials using awscli `aws configure --profile <profilename>`
 
       https://learn.hashicorp.com/tutorials/terraform/aws-build?in=terraform/aws-get-started
 

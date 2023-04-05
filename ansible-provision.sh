@@ -7,6 +7,7 @@ if [[ "$1" == "banner" ]]; then
    echo -e '\033[5m Congratualations your cluster is ready. You can set an alias using k="kubectl --kubeconfig=config" in the same directory'
    echo '#######################################################################'
    helm install --kubeconfig=config flannel https://github.com/flannel-io/flannel/releases/latest/download/flannel.tgz -n kube-system
+   kubectl --kubeconfig=config apply -f components.yaml
 else
    export ANSIBLE_HOST_KEY_CHECKING=False
    nc -z "$1" 22
