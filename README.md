@@ -31,16 +31,16 @@ Step:
  
    List all instances created using the key-pair of terraform:
 
-   - ./aws-cli-scripts.sh list <profile-name>
+   - `./aws-cli-scripts.sh list <profile-name>`
 
    ![list-instances](https://user-images.githubusercontent.com/43488291/192146559-8f347304-1321-4c9a-9041-fb29ccde1a73.png)
 
    Stop all instances listed by list command:
 
-   - ./aws-cli-scripts.sh stop <profile-name>
+   - `./aws-cli-scripts.sh stop <profile-name>`
 
    ![stop-instances](https://user-images.githubusercontent.com/43488291/192146563-9069a4c1-8571-40fc-a073-caa0a3c1cdff.png)
 
    Start all instances listed by list command:
 
-   - ./aws-cli-scripts.sh start <profile-name>
+   - `./aws-cli-scripts.sh start <profile-name>`
