@@ -67,7 +67,7 @@ variable "node-pubip-assoc" {
 variable "node-subnet" {
   type        = list(string)
   description = "Private Subnet CIDR values"
-  default     = ["10.0.4.0/24"]
+  default     = ["10.0.4.0/24","10.0.5.0/24"]
 }
 variable "node-key-pair" {
   default = "kubernetes-terraform"  
@@ -79,6 +79,12 @@ variable "azs" {
  type        = list(string)
  description = "Availability Zones"
  default     = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+}
+
+variable "iam_role" {
+  type = string
+  description = " IAM role arn for EC2 AWS loadbalancer controller"
+  default = "AWSLoadBalancerControllerIAMRole"
 }
 
 variable "sg_master_ingress_rules" {

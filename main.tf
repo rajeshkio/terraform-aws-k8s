@@ -129,6 +129,7 @@ resource "aws_instance" "master" {
   private_ip    = var.master-pvt-ip
   subnet_id = aws_subnet.master-subnet[0].id
   key_name = var.master-key-pair
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   vpc_security_group_ids = [ aws_security_group.allow_master.id ]
   tags = {
     Name = "master-k8s-0"
@@ -149,6 +150,7 @@ resource "aws_instance" "worker" {
   subnet_id = aws_subnet.node_subnets[0].id
   key_name = var.node-key-pair
   vpc_security_group_ids = [ aws_security_group.allow_node.id ]
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   tags = {
     Name = "worker-k8s-${count.index}"
   }
@@ -156,6 +158,11 @@ resource "aws_instance" "worker" {
   provisioner "local-exec" {
     command = "/bin/bash ansible-provision.sh ${self.public_ip} ${self.private_ip} master k8s-worker-${count.index}" 
   }
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "ec2_iam-profile"
+  role = var.iam_role
 }
 
 resource "null_resource" "running-provisioner" {

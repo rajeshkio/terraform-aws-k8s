@@ -8,3 +8,4 @@ vagrant-aws.pem
 terraform*
 config
 kubernetes-terraform.pem
+neuvector-test

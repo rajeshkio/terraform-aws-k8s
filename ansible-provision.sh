@@ -3,9 +3,9 @@
 
 if [[ "$1" == "banner" ]]; then
    sed -i "/:6443/s/https:.*/https:\/\/$2:6443/g" config
-   echo '#######################################################################'
-   echo -e '\033[5m Congratualations your cluster is ready. You can set an alias using k="kubectl --kubeconfig=config" in the same directory'
-   echo '#######################################################################'
+   echo '####################################################################################################################################'
+   echo -e 'Congratualations your cluster is ready. You can set an alias using `alias k="kubectl --kubeconfig=config"` in the same directory'
+   echo '####################################################################################################################################'
    helm install --kubeconfig=config flannel https://github.com/flannel-io/flannel/releases/latest/download/flannel.tgz -n kube-system
    kubectl --kubeconfig=config apply -f components.yaml
 else
