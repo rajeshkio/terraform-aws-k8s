@@ -186,3 +186,8 @@ variable "sg_node_ingress_rules" {
         },
     ]
 }
+variable "spot-price" {
+  type = string
+  default = "0.17"
+  description = "max bid value for a spot instance"
+}
